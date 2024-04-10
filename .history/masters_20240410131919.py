@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import numpy as np
 
+
+
 def get_masters_scores():
     url = "https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga"
     
