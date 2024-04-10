@@ -77,13 +77,13 @@ def main():
 
 if __name__ == "__main__":
     st.markdown(
-        """
-        <style>
-        body {
-            background-color: #f0f8ff;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """
+    <style>
+    body {
+        background-color: #f0f8ff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
     main()

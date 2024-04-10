@@ -76,14 +76,5 @@ def main():
     st.write(merged_df)
 
 if __name__ == "__main__":
-    st.markdown(
-        """
-        <style>
-        body {
-            background-color: #f0f8ff;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    
     main()
