@@ -38,7 +38,6 @@ def get_masters_scores():
             player_data.append({'golfer_name': name, 'score': score})
         
         df = pd.DataFrame(player_data)
-        df['score'] = df['score'].astype(int)
         return df
     else:
         return 'API Error'
@@ -49,19 +48,7 @@ def calculate_top_n(row, n):
 
 def main():
     #### Configure page layout ##### 
-    st.set_page_config(layout="wide")
-    st.title(':white[🏆 Masters Leaderboard 🏆]')
-    st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #174038;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-   
+    st.title('Masters Leaderboard')
     ################################
     
     # Fetching Masters scores
@@ -93,31 +80,12 @@ def main():
                                             'tier_1_1_score': '1 Score', 'tier_1_2_score': '2 Score', 'tier_1_3_score': '3 Score', 'tier_2_1_score': '4 Score', 'tier_2_2_score': '5 Score', 'tier_2_3_score': '6 Score', 'tier_3_1_score': '7 Score', 'tier_3_2_score': '8 Score', 'tier_4_1_score': '9 Score',
                                             'top_6_score': 'Score', 'top_7_score': 'Tiebreak'})
     for i in range(1, 10): 
-        merged_df[f'Pick: {i}'] = merged_df[str(i)] + ' (' + merged_df[f'{i} Score'].astype(str) + ')'
+        merged_df[f'Pick: {i}'] = 
     merged_df['Rank'] = merged_df['Score'].rank(method='min').astype(int)
     # Add blank col for spacing
     merged_df[''] = ''
+    
+    st.dataframe(data = merged_df, hide_index=True, column_order = ['Rank', 'Name', 'Score', 'Tiebreak', ''])
 
-    st.dataframe(data = merged_df.sort_values(by = 'Rank'), hide_index=True, column_order = ['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'])
-    def display_messages(messages):
-        st.subheader("Chat Messages")
-        for message in reversed(messages):  # Display newest messages at the top
-            st.write(message)
-            
-    # Create a sample DataFrame for storing messages
-    messages_df = pd.read_csv('messages.csv')
-    # Text area for users to input their message
-    message_input = st.text_area("Type your message here:")
-    
-    if st.button("Send"):
-        if message_input:
-            # Add the message to the DataFrame
-            messages_df = messages_df.append({"User": "User", "Message": message_input}, ignore_index=True)
-            # Display the updated messages
-            display_messages(messages_df["Message"].tolist())
-        else:
-            st.warning("Please enter a message.")
-    messages_df.to_csv('messages.csv')
-    
 if __name__ == "__main__":
     main()

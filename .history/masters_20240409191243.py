@@ -118,6 +118,5 @@ def main():
         else:
             st.warning("Please enter a message.")
     messages_df.to_csv('messages.csv')
-    
 if __name__ == "__main__":
     main()

@@ -108,7 +108,7 @@ def main():
     messages_df = pd.read_csv('messages.csv')
     # Text area for users to input their message
     message_input = st.text_area("Type your message here:")
-    
+    display_messages(messages_df["Message"].tolist())
     if st.button("Send"):
         if message_input:
             # Add the message to the DataFrame
@@ -118,6 +118,5 @@ def main():
         else:
             st.warning("Please enter a message.")
     messages_df.to_csv('messages.csv')
-    
 if __name__ == "__main__":
     main()

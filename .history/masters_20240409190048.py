@@ -50,7 +50,7 @@ def calculate_top_n(row, n):
 def main():
     #### Configure page layout ##### 
     st.set_page_config(layout="wide")
-    st.title(':white[🏆 Masters Leaderboard 🏆]')
+    st.title(':yellow [Masters Leaderboard')
     st.markdown(
     """
     <style>
@@ -99,25 +99,6 @@ def main():
     merged_df[''] = ''
 
     st.dataframe(data = merged_df.sort_values(by = 'Rank'), hide_index=True, column_order = ['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'])
-    def display_messages(messages):
-        st.subheader("Chat Messages")
-        for message in reversed(messages):  # Display newest messages at the top
-            st.write(message)
-            
-    # Create a sample DataFrame for storing messages
-    messages_df = pd.read_csv('messages.csv')
-    # Text area for users to input their message
-    message_input = st.text_area("Type your message here:")
-    
-    if st.button("Send"):
-        if message_input:
-            # Add the message to the DataFrame
-            messages_df = messages_df.append({"User": "User", "Message": message_input}, ignore_index=True)
-            # Display the updated messages
-            display_messages(messages_df["Message"].tolist())
-        else:
-            st.warning("Please enter a message.")
-    messages_df.to_csv('messages.csv')
-    
+
 if __name__ == "__main__":
     main()
