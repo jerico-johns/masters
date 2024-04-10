@@ -49,8 +49,7 @@ def calculate_top_n(row, n):
 
 def main():
     #### Configure page layout ##### 
-    st.set_page_config(layout="wide")
-    st.markdown("""<meta name="viewport" content="width=device-width, initial-scale=1.0">""", unsafe_allow_html=True)
+    st.set_page_config(
     st.title(':white[🏆 Masters Leaderboard 🏆]')
     st.markdown(
     """
