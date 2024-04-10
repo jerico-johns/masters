@@ -48,7 +48,17 @@ def calculate_top_n(row, n):
 
 def main():
     #### Configure page layout ##### 
-    st.title('Masters Leaderboard')
+    st.title('Masters Golf Event Analysis')
+    st.markdown(
+        """
+        <style>
+        .reportview-container{} {
+            background-color: #174038;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
     ################################
     
     # Fetching Masters scores
@@ -76,11 +86,8 @@ def main():
     merged_df['top_7_score'] = merged_df.apply(lambda row: calculate_top_n(row, n=7), axis=1)
     merged_df['top_8_score'] = merged_df.apply(lambda row: calculate_top_n(row, n=8), axis=1)
 
-    merged_df = merged_df.rename(columns = {'name': 'Name', 'tier_1_1': '1.1', 'tier_1_2': '1.2', 'tier_1_3': '1.3', 'tier_2_1': '2.1', 'tier_2_2': '2.2', 'tier_2_3': '2.3', 'tier_3_1': '3.1', 'tier_3_2': '3.2', 'tier_4_1': '4.1', 
-                                            'tier_1_1_score': '1.1 Score', 'tier_1_2_score': '1.2 Score', 'tier_1_3_score': '1.3 Score', 'tier_2_1_score': '2.1 Score', 'tier_2_2_score': '2.2 Score', 'tier_2_3_score': '2.3 Score', 'tier_3_1_score': '3.1 Score', 'tier_3_2_score': '3.2 Score', 'tier_4_1_score': '4.1 Score',
-                                            'top_6_score': 'Score', 'top_7_score': 'Tiebreak'})
-    merged_df
-    st.dataframe(data = merged_df, hide_index=True, column_order = ['Name', 'Score', 'Tiebreak'])
+    st.write("DataFrame with 'top_6_score', 'top_7_score', and 'top_8_score' columns:")
+    st.write(merged_df)
 
 if __name__ == "__main__":
     main()

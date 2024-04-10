@@ -78,9 +78,8 @@ def main():
 
     merged_df = merged_df.rename(columns = {'name': 'Name', 'tier_1_1': '1.1', 'tier_1_2': '1.2', 'tier_1_3': '1.3', 'tier_2_1': '2.1', 'tier_2_2': '2.2', 'tier_2_3': '2.3', 'tier_3_1': '3.1', 'tier_3_2': '3.2', 'tier_4_1': '4.1', 
                                             'tier_1_1_score': '1.1 Score', 'tier_1_2_score': '1.2 Score', 'tier_1_3_score': '1.3 Score', 'tier_2_1_score': '2.1 Score', 'tier_2_2_score': '2.2 Score', 'tier_2_3_score': '2.3 Score', 'tier_3_1_score': '3.1 Score', 'tier_3_2_score': '3.2 Score', 'tier_4_1_score': '4.1 Score',
-                                            'top_6_score': 'Score', 'top_7_score': 'Tiebreak'})
-    merged_df
-    st.dataframe(data = merged_df, hide_index=True, column_order = ['Name', 'Score', 'Tiebreak'])
+                                            'top_6_score': 'Score', 'top_7_score': '(Tiebreaker'})
+    st.dataframe(data = merged_df, hide_index=True, column_order = ['Name', 'Score', 'Tiebreaker'])
 
 if __name__ == "__main__":
     main()
