@@ -109,7 +109,7 @@ def main():
     # Text area for users to input their message
     message_input = st.text_area("Type your message here:")
     
-    if st.button("Send (and see msgs)"):
+    if st.button("Send"):
         if message_input:
             # Add the message to the DataFrame
             messages_df = pd.concat([messages_df, pd.DataFrame({"User": "User", "Message": message_input}, index=[0]*len(message_input))], ignore_index = True)
