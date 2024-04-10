@@ -52,16 +52,16 @@ def main():
     st.set_page_config(layout="wide")
     #st.markdown("""<meta name="viewport" content="width=device-width, initial-scale=1.0">""", unsafe_allow_html=True)
     st.title(':white[🏆 Masters Leaderboard 🏆]')
-    st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #174038;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+#     st.markdown(
+#     """
+#     <style>
+#     .stApp {
+#         background-color: #174038;
+#     }
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
    
     ################################
     
