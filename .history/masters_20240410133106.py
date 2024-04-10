@@ -32,13 +32,7 @@ def get_masters_scores():
                 name = 'Thorbjørn Olesen'
             
             position = player['status']['period']
-            
-            score = player['score']['displayValue']
-            if score == 'E': 
-                score = 0
-            else: 
-                score = int(score)
-                
+            score = player['score']['value']
             player_data.append({'golfer_name': name, 'score': score})
         
         df = pd.DataFrame(player_data)
@@ -72,6 +66,10 @@ unsafe_allow_html=True
 # Fetching Masters scores
 scores = get_masters_scores()
 
+# Insert dummy data (TODO: Delete)
+for idx, row in scores.iterrows(): 
+    scores.loc[idx, 'score'] = np.random.randint(0, 72)
+
 picks = pd.read_csv('masters_picks.csv')
 
 # Merging golfers_df with masters_data_df on golfer names
@@ -99,7 +97,7 @@ merged_df['Rank'] = merged_df['Score'].rank(method='min').astype(int)
 # Add blank col for spacing
 merged_df[''] = ''
 
-final_df = merged_df[['Rank', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9']]
+final_df = merged_df[['Rank']]
 st.dataframe(data = final_df.sort_values(by = 'Rank'))
 #st.dataframe(data = merged_df.sort_values(by = 'Rank'), hide_index=True, column_order = ['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'])
 # def display_messages(messages):

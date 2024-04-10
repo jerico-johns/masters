@@ -32,12 +32,9 @@ def get_masters_scores():
                 name = 'Thorbjørn Olesen'
             
             position = player['status']['period']
-            
             score = player['score']['displayValue']
             if score == 'E': 
                 score = 0
-            else: 
-                score = int(score)
                 
             player_data.append({'golfer_name': name, 'score': score})
         
@@ -71,6 +68,10 @@ unsafe_allow_html=True
 
 # Fetching Masters scores
 scores = get_masters_scores()
+
+# Insert dummy data (TODO: Delete)
+for idx, row in scores.iterrows(): 
+    scores.loc[idx, 'score'] = np.random.randint(0, 72)
 
 picks = pd.read_csv('masters_picks.csv')
 

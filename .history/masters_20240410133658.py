@@ -72,6 +72,10 @@ unsafe_allow_html=True
 # Fetching Masters scores
 scores = get_masters_scores()
 
+# Insert dummy data (TODO: Delete)
+for idx, row in scores.iterrows(): 
+    scores.loc[idx, 'score'] = np.random.randint(0, 72)
+
 picks = pd.read_csv('masters_picks.csv')
 
 # Merging golfers_df with masters_data_df on golfer names
