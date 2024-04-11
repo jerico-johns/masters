@@ -64,7 +64,7 @@ def get_masters_scores():
         return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
 
 def calculate_top_n(row, n):
-    scores = [row['tier_1_1_score'], row['tier_1_2_score'], row['tier_1_3_score'], row['tier_2_1_score'], row['tier_2_2_score'], row['tier_2_3_score'], row['tier_3_1_score'], row['tier_3_2_score'], row['tier_4_1_score']]
+    scores = [row['tier_1_1_score'], row['tier_1_2_score'], row['tier_1_3_score'], row['tier_2_1_score'], row['tier_2_2_score'], row['tier_2_3_score'], row['tier_3_2_score'], row['tier_3_2_score'], row['tier_4_1_score']]
     return sum(sorted(scores)[:n])
 
 
