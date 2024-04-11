@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-from bs4 import BeautifulSoup
+import bs4
 
 def get_masters_scores(): 
     url = 'https://www.espn.com/golf/leaderboard'
