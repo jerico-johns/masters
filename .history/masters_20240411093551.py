@@ -121,7 +121,7 @@ col1, col2 = st.columns([1, 1])
 names_full  = merged_df['Name'].sort_values()
 names = [name[:-2] for name in names_full]
 default_option = ""
-options = [default_option] + sorted(list(set(names)))
+options = [default_option] + list(set(names)).sort()
 
 with col1: 
     name_filter = st.selectbox('Filter by Name',  options)

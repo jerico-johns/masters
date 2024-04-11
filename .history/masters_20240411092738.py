@@ -47,10 +47,10 @@ def get_masters_scores():
             'Joaquín Niemann': 'Joaquin Niemann', 
             'Christo Lamprecht (a)': 'Christo Lamprecht', 
             'Jasper Stubbs (a)': 'Jasper Stubbs',
-            'Neal Shipley (a)': 'Neal Shipley', 
+            'Neal Shipley (a)': 'Neil Shipley', 
             'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
             'Stewart Hagestad (a)': 'Stewart Hagestad', 
-            'Thorbjørn Olesen': 'Thorbjorn Olesen'
+            'Thorbjørn Olesen'
         })
         
         df["score"] = df["score"].replace({
@@ -118,10 +118,9 @@ merged_df[''] = ''
 # final_df = merged_df[['Rank', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9']]
 # Add a text input for filtering by 'Name'
 col1, col2 = st.columns([1, 1])
-names_full  = merged_df['Name'].sort_values()
-names = [name[:-2] for name in names_full]
+names = merged_df['Name'].sort_values().unique()
 default_option = ""
-options = [default_option] + sorted(list(set(names)))
+options = [default_option] + list(names)
 
 with col1: 
     name_filter = st.selectbox('Filter by Name',  options)
