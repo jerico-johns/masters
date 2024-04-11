@@ -3,61 +3,51 @@ import requests
 import pandas as pd
 import numpy as np
 
-def get_masters_scores(): 
-    url = 'https://www.espn.com/golf/leaderboard'
+def get_masters_scores():
+    url = "https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga"
+    
     headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-        }
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    }
+    
     response = requests.get(url, headers=headers)
-    # Check if the request was successful (status code 200)
+    
     if response.status_code == 200:
-        # Parse the HTML content of the webpage
-        soup = BeautifulSoup(response.content, "html.parser")
-        
-        # Find the table with the specified class
-        table = soup.find("tbody", class_="Table__TBODY")
-        
-        # Check if the table was found
-     
-        # Extract the rows of the table
-        rows = table.find_all("tr")
-        
-        # Initialize an empty list to store the table data
-        data = []
-        
-        # Loop through each row and extract the data
-        for row in rows:
-            # Extract the cells (td) of the row
-            cells = row.find_all("td")
+        data = response.json()
+        tournament = data['events'][0]['name']
+        leaderboard = data['events'][0]['competitions'][0]['competitors']
+        player_data = []
+        for player in leaderboard:
+            name = player['athlete']['displayName']
+            # Fix names 
+            if name == 'Byeong-Hun An': 
+                name = 'Byeong Hun An'
+            elif name == 'Cameron Davis': 
+                name = 'Cam Davis'
+            elif name == 'Ludvig Aberg': 
+                name = 'Ludvig Åberg'
+            elif name == 'Nicolai Højgaard': 
+                name = 'Nicolai Hojgaard'
+            elif name == 'Thorbjorn Olesen': 
+                name = 'Thorbjørn Olesen'
+            elif name == 'Joaquín Niemann': 
+                name = 'Joaquin Niemann'
             
-            # Extract the text content of each cell and append to the data list
-            row_data = [cell.get_text() for cell in cells]
-            data.append(row_data)
+            position = player['status']['period']
+            
+            score = player['score']['displayValue']
+            if score == 'E': 
+                score = 0
+            else: 
+                score = '{:+}'.format)int(score)
+                
+            player_data.append({'golfer_name': name, 'score': score})
         
-        # Convert the data list into a pandas DataFrame
-        df = pd.DataFrame(data)
-        df = df[[2, 3]]
-        df.columns = ['golfer_name', 'score']
-        
-        df["golfer_name"] = df["golfer_name"].replace({
-            'Byeong-Hun An': 'Byeong Hun An',
-            'Cameron Davis': 'Cam Davis',
-            'Ludvig Aberg': 'Ludvig Åberg',
-            'Nicolai Højgaard': 'Nicolai Hojgaard',
-            'Thorbjorn Olesen': 'Thorbjørn Olesen',
-            'Joaquín Niemann': 'Joaquin Niemann'
-        })
-        
-        df["score"] = df["score"].replace({
-            'E': 0
-        })
-        df['score'] 
-        df["score"] = df["score"].apply(lambda x: int(x))
-        
-        return df 
-        
+        df = pd.DataFrame(player_data)
+        df['score'] = df['score'].astype(int)
+        return df
     else:
-        return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
+        return 'API Error'
 
 def calculate_top_n(row, n):
     scores = [row['tier_1_1_score'], row['tier_1_2_score'], row['tier_1_3_score'], row['tier_2_1_score'], row['tier_2_2_score'], row['tier_2_3_score'], row['tier_3_2_score'], row['tier_4_1_score']]
