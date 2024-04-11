@@ -105,7 +105,7 @@ merged_df[''] = ''
 # Add a text input for filtering by 'Name'
 col1, col2 = st.columns([1, 1])
 names = merged_df['Name'].sort_values().unique()
-default_option = ""
+default_option = "Select a name"
 options = [default_option] + list(names)
 
 with col1: 
