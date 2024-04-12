@@ -19,7 +19,7 @@ def get_masters_scores():
         table = soup.find("tbody", class_="Table__TBODY")
         
         # Check if the table was found
-        
+     
         # Extract the rows of the table
         rows = table.find_all("tr")
         
@@ -34,37 +34,32 @@ def get_masters_scores():
             # Extract the text content of each cell and append to the data list
             row_data = [cell.get_text() for cell in cells]
             data.append(row_data)
-        headers = soup.find_all('th')
-        header_texts = [header.text.strip() for header in headers]
+        
         # Convert the data list into a pandas DataFrame
         df = pd.DataFrame(data)
-        df = df[[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
-        df.columns = [x for x in header_texts]
-        
-        df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
+        df = df[[3, 4]]
+        df.columns = ['golfer_name', 'score']
         
         df["golfer_name"] = df["golfer_name"].replace({
-                'Ludvig Åberg': 'Ludvig Aberg',
-                'Byeong Hun An': 'Byeong-Hun An', 
-                'Nicolai Højgaard': 'Nicolai Hojgaard',
-                'Joaquín Niemann': 'Joaquin Niemann', 
-                'Christo Lamprecht (a)': 'Christo Lamprecht', 
-                'Jasper Stubbs (a)': 'Jasper Stubbs',
-                'Neal Shipley (a)': 'Neal Shipley', 
-                'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
-                'Stewart Hagestad (a)': 'Stewart Hagestad', 
-                'Thorbjørn Olesen': 'Thorbjorn Olesen'
-            })
-            
-        df["score"] = df["score"].replace({
-            'E': '0', 
+            'Ludvig Åberg': 'Ludvig Aberg',
+            'Byeong Hun An': 'Byeong-Hun An', 
+            'Nicolai Højgaard': 'Nicolai Hojgaard',
+            'Joaquín Niemann': 'Joaquin Niemann', 
+            'Christo Lamprecht (a)': 'Christo Lamprecht', 
+            'Jasper Stubbs (a)': 'Jasper Stubbs',
+            'Neal Shipley (a)': 'Neal Shipley', 
+            'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
+            'Stewart Hagestad (a)': 'Stewart Hagestad', 
+            'Thorbjørn Olesen': 'Thorbjorn Olesen'
         })
-        df.columns = df.columns.get_level_values(0)
-        df = df.dropna()
-        for idx, row in df.iterrows(): 
-            row['score'] = int(str(row['score']).strip('+'))
-        return df
-            
+        
+        df["score"] = df["score"].replace({
+            'E': 0
+        })
+        df["score"] = df["score"].astype(int)
+        
+        return df 
+        
     else:
         return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
 

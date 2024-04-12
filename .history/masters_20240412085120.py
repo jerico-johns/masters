@@ -39,7 +39,7 @@ def get_masters_scores():
         # Convert the data list into a pandas DataFrame
         df = pd.DataFrame(data)
         df = df[[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
-        df.columns = [x for x in header_texts]
+        df.columns = [header_texts]
         
         df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
         
@@ -59,10 +59,10 @@ def get_masters_scores():
         df["score"] = df["score"].replace({
             'E': '0', 
         })
-        df.columns = df.columns.get_level_values(0)
         df = df.dropna()
         for idx, row in df.iterrows(): 
             row['score'] = int(str(row['score']).strip('+'))
+            
         return df
             
     else:
