@@ -8,98 +8,98 @@ import pytz
 
 def get_masters_scores(): 
     url = 'https://www.espn.com/golf/leaderboard'
-    headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-        }
-    response = requests.get(url, headers=headers)
-    # Check if the request was successful (status code 200)
-    if response.status_code == 200:
-        # Parse the HTML content of the webpage
-        soup = BeautifulSoup(response.content, "html.parser")
+headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    }
+response = requests.get(url, headers=headers)
+# Check if the request was successful (status code 200)
+if response.status_code == 200:
+    # Parse the HTML content of the webpage
+    soup = BeautifulSoup(response.content, "html.parser")
+    
+    # Find the table with the specified class
+    table = soup.find("tbody", class_="Table__TBODY")
+    
+    # Check if the table was found
+    
+    # Extract the rows of the table
+    rows = table.find_all("tr")
+    
+    # Initialize an empty list to store the table data
+    data = []
+    
+    # Loop through each row and extract the data
+    for row in rows:
+        # Extract the cells (td) of the row
+        cells = row.find_all("td")
         
-        # Find the table with the specified class
-        table = soup.find("tbody", class_="Table__TBODY")
-        
-        # Check if the table was found
-        
-        # Extract the rows of the table
-        rows = table.find_all("tr")
-        
-        # Initialize an empty list to store the table data
-        data = []
-        
-        # Loop through each row and extract the data
-        for row in rows:
-            # Extract the cells (td) of the row
-            cells = row.find_all("td")
-            
-            # Extract the text content of each cell and append to the data list
-            row_data = [cell.get_text() for cell in cells]
-            data.append(row_data)
-        headers = soup.find_all('th')
-        header_texts = [header.text.strip() for header in headers]
-        # Convert the data list into a pandas DataFrame
-        df = pd.DataFrame(data)
-        df = df[[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
-        df.columns = [x for x in header_texts]
-        
-        df['R3'] = df['R3'].replace('--', '0')
-        df['R4'] = df['R4'].replace('--', '0')
+        # Extract the text content of each cell and append to the data list
+        row_data = [cell.get_text() for cell in cells]
+        data.append(row_data)
+    headers = soup.find_all('th')
+    header_texts = [header.text.strip() for header in headers]
+    # Convert the data list into a pandas DataFrame
+    df = pd.DataFrame(data)
+    df = df[[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
+    df.columns = [x for x in header_texts]
+    
+    df['R3'] = df['R3'].replace('--', '0')
+    df['R4'] = df['R4'].replace('--', '0')
 
-        # Filter DataFrame
-        df = df.dropna(subset = ['PLAYER'])
-        filtered_df = df[~df['PLAYER'].str.endswith('(a)')]
-        filtered_df = filtered_df[filtered_df['SCORE'] != 'CUT']
-        filtered_df["TODAY"] = filtered_df["TODAY"].replace({
-                'E': '0', 
-            })
-        filtered_df["R3"] = filtered_df["R3"].replace({
-                'E': '0', 
-            })
-
-        for idx, row in filtered_df.iterrows(): 
-                filtered_df.at[idx, 'TODAY'] = int(str(row['TODAY']).strip('+'))
-                filtered_df.at[idx, 'R3'] = int(str(row['R3']).strip('+'))
-                
-        max_today = filtered_df['TODAY'].max() 
-        max_r3 = filtered_df['R3'].max()
-
-        # If we are on Saturday (R3) only add R1 and R2 else add R1 R2 and R3 
-        current_date = datetime.now().date().strftime('%d-%m-%Y')
-
-        for idx, row in df.iterrows(): 
-            if row['SCORE'] == 'CUT': 
-                if current_date == '12-04-2024': 
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) 
-                elif current_date == '13-04-2024': 
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) + max_today
-                elif current_date == '14-04-2024': 
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) + (max_r3 - 72) + max_today
-        
-        
-        df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
-        
-        df["golfer_name"] = df["golfer_name"].replace({
-                'Ludvig Åberg': 'Ludvig Aberg',
-                'Byeong Hun An': 'Byeong-Hun An', 
-                'Nicolai Højgaard': 'Nicolai Hojgaard',
-                'Joaquín Niemann': 'Joaquin Niemann', 
-                'Christo Lamprecht (a)': 'Christo Lamprecht', 
-                'Jasper Stubbs (a)': 'Jasper Stubbs',
-                'Neal Shipley (a)': 'Neal Shipley', 
-                'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
-                'Stewart Hagestad (a)': 'Stewart Hagestad', 
-                'Thorbjørn Olesen': 'Thorbjorn Olesen'
-            })
-            
-        df["score"] = df["score"].replace({
+    # Filter DataFrame
+    df = df.dropna(subset = ['PLAYER'])
+    filtered_df = df[~df['PLAYER'].str.endswith('(a)')]
+    filtered_df = filtered_df[filtered_df['SCORE'] != 'CUT']
+    filtered_df["TODAY"] = filtered_df["TODAY"].replace({
             'E': '0', 
         })
-        df.columns = df.columns.get_level_values(0)
-        df = df.dropna()
-        for idx, row in df.iterrows(): 
-            df.at[idx, 'score'] = int(str(row['score']).strip('+'))
-        return df 
+    filtered_df["R3"] = filtered_df["R3"].replace({
+            'E': '0', 
+        })
+
+    for idx, row in filtered_df.iterrows(): 
+            filtered_df.at[idx, 'TODAY'] = int(str(row['TODAY']).strip('+'))
+            filtered_df.at[idx, 'R3'] = int(str(row['R3']).strip('+'))
+            
+    max_today = filtered_df['TODAY'].max() 
+    max_r3 = filtered_df['R3'].max()
+
+    # If we are on Saturday (R3) only add R1 and R2 else add R1 R2 and R3 
+    current_date = datetime.now().date().strftime('%d-%m-%Y')
+
+    for idx, row in df.iterrows(): 
+        if row['SCORE'] == 'CUT': 
+            if current_date == '12-04-2024': 
+                df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) 
+            elif current_date == '13-04-2024': 
+                df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) + max_today
+            elif current_date == '14-04-2024': 
+                df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) + (max_r3 - 72) + max_today
+    
+    
+    df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
+    
+    df["golfer_name"] = df["golfer_name"].replace({
+            'Ludvig Åberg': 'Ludvig Aberg',
+            'Byeong Hun An': 'Byeong-Hun An', 
+            'Nicolai Højgaard': 'Nicolai Hojgaard',
+            'Joaquín Niemann': 'Joaquin Niemann', 
+            'Christo Lamprecht (a)': 'Christo Lamprecht', 
+            'Jasper Stubbs (a)': 'Jasper Stubbs',
+            'Neal Shipley (a)': 'Neal Shipley', 
+            'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
+            'Stewart Hagestad (a)': 'Stewart Hagestad', 
+            'Thorbjørn Olesen': 'Thorbjorn Olesen'
+        })
+        
+    df["score"] = df["score"].replace({
+        'E': '0', 
+    })
+    df.columns = df.columns.get_level_values(0)
+    df = df.dropna()
+    for idx, row in df.iterrows(): 
+        df.at[idx, 'score'] = int(str(row['score']).strip('+'))
+            return df 
     else:
         return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
 
