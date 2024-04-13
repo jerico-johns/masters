@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 def get_masters_scores(): 
     url = 'https://www.espn.com/golf/leaderboard'

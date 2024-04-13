@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 def get_masters_scores(): 
     url = 'https://www.espn.com/golf/leaderboard'
@@ -93,7 +92,8 @@ def get_masters_scores():
         df = df.dropna()
         for idx, row in df.iterrows(): 
             df.at[idx, 'score'] = int(str(row['score']).strip('+'))
-            return df 
+            return df
+            
     else:
         return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
 
