@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz 
 
+
 def get_masters_scores(): 
     url = 'https://www.espn.com/golf/leaderboard'
     headers = {
@@ -59,9 +60,8 @@ def get_masters_scores():
                 
         max_today = filtered_df['TODAY'].max() 
 
-        # Define Eastern Time timezone
-        eastern = pytz.timezone('US/Eastern')
-        current_date = datetime.now(eastern).date().strftime('%d-%m-%Y')
+        # If we are on Saturday (R3) only add R1 and R2 else add R1 R2 and R3 
+        current_date = datetime.now().date().strftime('%d-%m-%Y')
 
         for idx, row in df.iterrows(): 
             if row['SCORE'] == 'CUT': 

@@ -61,7 +61,7 @@ def get_masters_scores():
 
         # Define Eastern Time timezone
         eastern = pytz.timezone('US/Eastern')
-        current_date = datetime.now(eastern).date().strftime('%d-%m-%Y')
+        current_date = datetime.now().date().strftime('%d-%m-%Y')
 
         for idx, row in df.iterrows(): 
             if row['SCORE'] == 'CUT': 
