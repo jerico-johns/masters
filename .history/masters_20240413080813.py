@@ -52,7 +52,7 @@ def get_masters_scores():
         filtered_df = filtered_df[filtered_df['SCORE'] != 'CUT']
         filtered_df["TODAY"] = filtered_df["TODAY"].replace({
                 'E': '0', 
-                '-': '0'
+                '--': '0'
             })
         filtered_df["R3"] = filtered_df["R3"].replace({
                 'E': '0', 
