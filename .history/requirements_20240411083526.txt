@@ -1,2 +1,0 @@
-streamlit == 1.23
-beautifulsoup4 == 4.12.3
