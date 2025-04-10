@@ -102,7 +102,7 @@ def get_masters_scores():
                 'Nicolai Højgaard': 'Nicolai Hojgaard',
                 'Noah Kent (a)': 'Noah Kent',
                 'Rasmus Højgaard': 'Rasmus Hojgaard', 
-                'Robert MacIntyre': 'Robert Macintyre'
+                 'Robert MacIntyre': 'Robert Macintyre'
             })
             
         df["score"] = df["score"].replace({
