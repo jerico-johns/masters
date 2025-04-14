@@ -18,14 +18,7 @@ def get_masters_scores():
         soup = BeautifulSoup(response.content, "html.parser")
         
         # Find the table with the specified class
-        tables = soup.find_all("tbody", class_="Table__TBODY")
-        if len(tables) >= 2:
-            table = tables[1]  # Get the second table
-        else:
-            print("Required table not found")
-        
-        # Extract the rows of the table
-        rows = table.find_all("tr")
+        table = soup.find("tbody", class_="Table__TBODY")
         
         # Check if the table was found
         
@@ -43,39 +36,35 @@ def get_masters_scores():
             # Extract the text content of each cell and append to the data list
             row_data = [cell.get_text() for cell in cells]
             data.append(row_data)
-            headers = soup.find_all('th')
+        headers = soup.find_all('th')
         header_texts = [header.text.strip() for header in headers]
-        header_texts = header_texts[3:]
-        
         # Convert the data list into a pandas DataFrame
         df = pd.DataFrame(data)
-
         available_columns = [col for col in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] if col in df.columns]
         df = df[available_columns]
-        # Only use the first N header texts where N matches the number of columns in df
-        df.columns = header_texts[:len(df.columns)]
+        df.columns = [x for x in header_texts]
         
-        df['R3'] = df['R3'].replace('--', '0')
-        df['R4'] = df['R4'].replace('--', '0')
+        # df['R3'] = df['R3'].replace('--', '0')
+        # df['R4'] = df['R4'].replace('--', '0')
 
         # Filter DataFrame
         df = df.dropna(subset = ['PLAYER'])
         filtered_df = df[~df['PLAYER'].str.endswith('(a)')]
         filtered_df = filtered_df[filtered_df['SCORE'] != 'CUT']
-        # filtered_df["TODAY"] = filtered_df["TODAY"].replace({
-        #         'E': '0', 
-        #     })
+        filtered_df["TODAY"] = filtered_df["TODAY"].replace({
+                'E': '0', 
+                '-': '0'
+            })
         filtered_df["R3"] = filtered_df["R3"].replace({
                 'E': '0', 
                 '--': '0'
             })
 
         for idx, row in filtered_df.iterrows(): 
-                # filtered_df.at[idx, 'TODAY'] = int(str(row['TODAY']).strip('+'))
-                filtered_df.at[idx, 'R4'] = int(str(row['R4']).strip('+'))
+                filtered_df.at[idx, 'TODAY'] = int(str(row['TODAY']).strip('+'))
                 filtered_df.at[idx, 'R3'] = int(str(row['R3']).strip('+'))
                 
-        max_today = filtered_df['R4'].max() 
+        max_today = filtered_df['TODAY'].max() 
         max_r3 = filtered_df['R3'].max()
 
         # If we are on Saturday (R3) only add R1 and R2 else add R1 R2 and R3 
@@ -99,16 +88,21 @@ def get_masters_scores():
         df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
         
         df["golfer_name"] = df["golfer_name"].replace({
+                'Ángel Cabrera': 'Angel Cabrera',
+                'Byeong Hun An': 'Byeong-Hun An',
+                'Cam Davis': 'Cameron Davis',
+                'Evan Beck (a)': 'Evan Beck',
+                'Hiroshi Tai (a)': 'Hiroshi Tai',
+                'Joaquín Niemann': 'Joaquin Niemann',
+                'Jose Luis Ballester (a)': 'Jose Luis Ballester',
+                'José María Olazábal': 'Jose Maria Olazabal',
+                'Justin Hastings (a)': 'Justin Hastings',
                 'Ludvig Åberg': 'Ludvig Aberg',
-                'Byeong Hun An': 'Byeong-Hun An', 
+                'Matt McCarty': 'Matthew McCarty',
                 'Nicolai Højgaard': 'Nicolai Hojgaard',
-                'Joaquín Niemann': 'Joaquin Niemann', 
-                'Christo Lamprecht (a)': 'Christo Lamprecht', 
-                'Jasper Stubbs (a)': 'Jasper Stubbs',
-                'Neal Shipley (a)': 'Neal Shipley', 
-                'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
-                'Stewart Hagestad (a)': 'Stewart Hagestad', 
-                'Thorbjørn Olesen': 'Thorbjorn Olesen'
+                'Noah Kent (a)': 'Noah Kent',
+                'Rasmus Højgaard': 'Rasmus Hojgaard', 
+                'Robert MacIntyre': 'Robert Macintyre'
             })
             
         df["score"] = df["score"].replace({
@@ -118,9 +112,9 @@ def get_masters_scores():
         df = df.dropna()
         for idx, row in df.iterrows(): 
             df.at[idx, 'score'] = int(str(row['score']).strip('+'))
-            return df 
-        else:
-            return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
+        return df 
+    else:
+        return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
 
 def calculate_top_n(row, n):
     scores = []
