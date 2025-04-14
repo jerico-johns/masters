@@ -200,15 +200,8 @@ with col1:
 
 # Filter the dataframe based on the input
 filtered_df = merged_df[merged_df['Name'].str.contains(name_filter, case=False)]
-score_columns = [col for col in filtered_df.columns if 'Score' in col]
-for col in score_columns:
-    filtered_df[col] = filtered_df[col].astype(str)
 
-# Now display the DataFrame
-st.dataframe(data=filtered_df.sort_values(by='Rank'), 
-            hide_index=True, 
-            column_order=['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'], 
-            width=2000)
+st.dataframe(data = filtered_df.sort_values(by = 'Rank'), hide_index=True, column_order = ['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'], width = 2000)
 # def display_messages(messages):
 #     st.subheader("Chat Messages")
 #     for message in reversed(messages):  # Display newest messages at the top
