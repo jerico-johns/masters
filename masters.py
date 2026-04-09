@@ -2,125 +2,122 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-from bs4 import BeautifulSoup
-from datetime import datetime
-import pytz 
+import unicodedata
 
-def get_masters_scores(): 
-    url = 'https://www.espn.com/golf/leaderboard'
-    headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-        }
-    response = requests.get(url, headers=headers)
-    # Check if the request was successful (status code 200)
-    if response.status_code == 200:
-        # Parse the HTML content of the webpage
-        soup = BeautifulSoup(response.content, "html.parser")
-        
-        # Find the table with the specified class
-        tables = soup.find_all("tbody", class_="Table__TBODY")
-        if len(tables) >= 2:
-            table = tables[1]  # Get the second table
+# Map ESPN API names to names used in masters_picks.csv
+NAME_OVERRIDES = {
+    'José María Olazábal': 'Jose Maria Olazabal',
+    'Ludvig Åberg': 'Ludvig Aberg',
+    'Nicolai Højgaard': 'Nicolai Hojgaard',
+    'Rasmus Højgaard': 'Rasmus Hojgaard',
+    'Ángel Cabrera': 'Angel Cabrera',
+    'Sergio García': 'Sergio Garcia',
+    'Sami Välimäki': 'Sami Valimaki',
+    'Byeong Hun An': 'Byeong-Hun An',
+    'Josele Ballester': 'Jose Luis Ballester',
+}
+
+def _normalize_name(name):
+    """Strip accents and normalize unicode to ASCII for name matching."""
+    if name in NAME_OVERRIDES:
+        return NAME_OVERRIDES[name]
+    # Strip accents as a fallback for names not in overrides
+    nfkd = unicodedata.normalize('NFKD', name)
+    return ''.join(c for c in nfkd if not unicodedata.combining(c))
+
+# Masters Sunday dates by year (used to fetch the correct tournament from ESPN)
+MASTERS_DATES = {
+    2024: '20240414',
+    2025: '20250413',
+    2026: '20260412',
+}
+
+def get_masters_scores(year=None):
+    url = 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'
+    params = {}
+    if year and year in MASTERS_DATES:
+        params['dates'] = MASTERS_DATES[year]
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        st.error(f"Failed to retrieve ESPN scores. Status code: {response.status_code}")
+        return pd.DataFrame(columns=['golfer_name', 'score'])
+
+    data = response.json()
+    events = data.get('events', [])
+    if not events:
+        st.error("No active golf event found on ESPN.")
+        return pd.DataFrame(columns=['golfer_name', 'score'])
+
+    competition = events[0]['competitions'][0]
+    competitors = competition['competitors']
+    current_round = competition.get('status', {}).get('period', 1)
+
+    def _parse_round(display_val):
+        """Parse a round score display value to int, or None if not played."""
+        if display_val in ('-', '--', None):
+            return None
+        if display_val == 'E':
+            return 0
+        return int(display_val.replace('+', ''))
+
+    # Identify cut players and collect round scores from active players
+    player_data = []
+    active_round_scores = {}  # {round_num: [scores]}
+    for player in competitors:
+        name = _normalize_name(player['athlete']['fullName'])
+        score_str = player.get('score', 'E')
+        score = 0 if score_str == 'E' else int(score_str.replace('+', ''))
+        linescores = player.get('linescores', [])
+
+        is_cut = current_round >= 3 and any(ls.get('displayValue') == '-' for ls in linescores)
+        player_data.append({'name': name, 'score': score, 'is_cut': is_cut, 'linescores': linescores})
+
+        if not is_cut:
+            for ls in linescores:
+                rd = ls.get('period')
+                val = _parse_round(ls.get('displayValue'))
+                if rd and rd <= 4 and val is not None:
+                    active_round_scores.setdefault(rd, []).append(val)
+
+    # For each round after the cut (R3, R4), find the worst score among active players
+    worst_by_round = {}
+    for rd, scores in active_round_scores.items():
+        worst_by_round[rd] = max(scores)
+
+    # Apply cut penalty: for each missed round, add the worst active score
+    # A cut player misses any round that (a) has a "-" linescore or
+    # (b) exists in active_round_scores but is absent from their linescores
+    rows = []
+    for p in player_data:
+        score = p['score']
+        if p['is_cut']:
+            linescore_rounds = set()
+            for ls in p['linescores']:
+                rd = ls.get('period')
+                if rd:
+                    linescore_rounds.add(rd)
+                if ls.get('displayValue') == '-' and rd in worst_by_round:
+                    score += worst_by_round[rd]
+            # Also penalize for rounds with no linescore entry at all
+            for rd, worst in worst_by_round.items():
+                if rd not in linescore_rounds and rd in (3, 4):
+                    score += worst
+        # Determine current hole from the current round's hole-by-hole linescores
+        current_ls = next((ls for ls in p['linescores'] if ls.get('period') == current_round), {})
+        hole_scores = current_ls.get('linescores', [])
+        if p['is_cut']:
+            thru = 'CUT'
+        elif current_ls.get('displayValue') == '-':
+            thru = ''  # hasn't teed off yet
+        elif len(hole_scores) >= 18:
+            thru = 'F'
+        elif len(hole_scores) > 0:
+            thru = str(len(hole_scores))
         else:
-            print("Required table not found")
-        
-        # Extract the rows of the table
-        rows = table.find_all("tr")
-        
-        # Check if the table was found
-        
-        # Extract the rows of the table
-        rows = table.find_all("tr")
-        
-        # Initialize an empty list to store the table data
-        data = []
-        
-        # Loop through each row and extract the data
-        for row in rows:
-            # Extract the cells (td) of the row
-            cells = row.find_all("td")
-            
-            # Extract the text content of each cell and append to the data list
-            row_data = [cell.get_text() for cell in cells]
-            data.append(row_data)
-            headers = soup.find_all('th')
-        header_texts = [header.text.strip() for header in headers]
-        header_texts = header_texts[3:]
-        
-        # Convert the data list into a pandas DataFrame
-        df = pd.DataFrame(data)
+            thru = ''
+        rows.append({'golfer_name': p['name'], 'score': score, 'thru': thru})
 
-        available_columns = [col for col in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] if col in df.columns]
-        df = df[available_columns]
-        # Only use the first N header texts where N matches the number of columns in df
-        df.columns = header_texts[:len(df.columns)]
-        
-        df['R3'] = df['R3'].replace('--', '0')
-        df['R4'] = df['R4'].replace('--', '0')
-
-        # Filter DataFrame
-        df = df.dropna(subset = ['PLAYER'])
-        filtered_df = df[~df['PLAYER'].str.endswith('(a)')]
-        filtered_df = filtered_df[filtered_df['SCORE'] != 'CUT']
-        # filtered_df["TODAY"] = filtered_df["TODAY"].replace({
-        #         'E': '0', 
-        #     })
-        filtered_df["R3"] = filtered_df["R3"].replace({
-                'E': '0', 
-                '--': '0'
-            })
-
-        for idx, row in filtered_df.iterrows(): 
-                # filtered_df.at[idx, 'TODAY'] = int(str(row['TODAY']).strip('+'))
-                filtered_df.at[idx, 'R4'] = int(str(row['R4']).strip('+'))
-                filtered_df.at[idx, 'R3'] = int(str(row['R3']).strip('+'))
-                
-        max_today = filtered_df['R4'].max() 
-        max_r3 = filtered_df['R3'].max()
-
-        # If we are on Saturday (R3) only add R1 and R2 else add R1 R2 and R3 
-        current_date = datetime.now().date().strftime('%d-%m-%Y')
-
-        for idx, row in df.iterrows(): 
-            if row['SCORE'] == 'CUT': 
-                if current_date == '11-04-2025': 
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) 
-                elif current_date == '12-04-2025': 
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72) + max_today
-                elif current_date == '13-04-2025':
-                    df.at[idx, 'SCORE'] = (int(row['R1']) - 72) + (int(row['R2']) - 72)
-                    if row['R3'] == '--':
-                        df.at[idx, 'SCORE'] += (max_r3 - 72)
-                    else: 
-                        df.at[idx, 'SCORE'] += (int(row['R3']) - 72)
-                    df.at[idx, 'SCORE'] += max_today
-        
-        
-        df = df[['PLAYER', 'SCORE']].rename(columns = {'PLAYER': 'golfer_name', 'SCORE': 'score'})
-        
-        df["golfer_name"] = df["golfer_name"].replace({
-                'Ludvig Åberg': 'Ludvig Aberg',
-                'Byeong Hun An': 'Byeong-Hun An', 
-                'Nicolai Højgaard': 'Nicolai Hojgaard',
-                'Joaquín Niemann': 'Joaquin Niemann', 
-                'Christo Lamprecht (a)': 'Christo Lamprecht', 
-                'Jasper Stubbs (a)': 'Jasper Stubbs',
-                'Neal Shipley (a)': 'Neal Shipley', 
-                'Santiago de la Fuente (a)': 'Santiago De la Fuente', 
-                'Stewart Hagestad (a)': 'Stewart Hagestad', 
-                'Thorbjørn Olesen': 'Thorbjorn Olesen'
-            })
-            
-        df["score"] = df["score"].replace({
-            'E': '0', 
-        })
-        df.columns = df.columns.get_level_values(0)
-        df = df.dropna()
-        for idx, row in df.iterrows(): 
-            df.at[idx, 'score'] = int(str(row['score']).strip('+'))
-            return df 
-        else:
-            return f"Failed to retrieve ESPN scores. Status code:{response.status_code}"
+    return pd.DataFrame(rows)
 
 def calculate_top_n(row, n):
     scores = []
@@ -140,7 +137,7 @@ def calculate_top_n(row, n):
 #### Configure page layout ##### 
 st.set_page_config(layout="wide")
 #st.markdown("""<meta name="viewport" content="width=device-width, initial-scale=1.0">""", unsafe_allow_html=True)
-st.title('🏆 Masters Leaderboard 🏆')
+st.markdown('<h1 style="color: white;">🏆 2026 Masters Leaderboard 🏆</h1>', unsafe_allow_html=True)
 st.markdown(
 """
 <style>
@@ -154,24 +151,26 @@ unsafe_allow_html=True
 
 ################################
 
-# Fetching Masters scores
-scores = get_masters_scores()
-print(scores)
+# Fetching Masters scores (year should match the picks CSV)
+scores = get_masters_scores(year=2026)
+
+if scores.empty:
+    st.stop()
 
 picks = pd.read_csv('masters_picks.csv')
 picks = picks.drop(columns = ['PAYMENT - Select Option Below & Pay Prior to Submission'])
 picks = picks.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
 # Merging golfers_df with masters_data_df on golfer names
-for col in ['tier_1_1', 'tier_1_2', 'tier_1_3', 'tier_2_1', 'tier_2_2', 'tier_2_3', 'tier_3_1', 'tier_3_2', 'tier_4_1']: 
-    if col == 'tier_1_1': 
+for col in ['tier_1_1', 'tier_1_2', 'tier_1_3', 'tier_2_1', 'tier_2_2', 'tier_2_3', 'tier_3_1', 'tier_3_2', 'tier_4_1']:
+    if col == 'tier_1_1':
         merged_df = pd.merge(picks, scores, how='left', left_on=col, right_on='golfer_name')
         merged_df = merged_df.drop(columns = 'golfer_name')
-        merged_df = merged_df.rename(columns = {'score': f'{col}_score'})
-    else: 
+        merged_df = merged_df.rename(columns = {'score': f'{col}_score', 'thru': f'{col}_thru'})
+    else:
         merged_df = pd.merge(merged_df, scores, how ='left', left_on=col, right_on = 'golfer_name')
         merged_df = merged_df.drop(columns = ['golfer_name'])
-        merged_df = merged_df.rename(columns = {'score': f'{col}_score'})
+        merged_df = merged_df.rename(columns = {'score': f'{col}_score', 'thru': f'{col}_thru'})
 print(merged_df)
 # Calculate top n scores
 merged_df['top_6_score'] = merged_df.apply(lambda row: calculate_top_n(row, n=6), axis=1)
@@ -181,8 +180,37 @@ merged_df['top_8_score'] = merged_df.apply(lambda row: calculate_top_n(row, n=8)
 merged_df = merged_df.rename(columns = {'name': 'Name', 'tier_1_1': '1', 'tier_1_2': '2', 'tier_1_3': '3', 'tier_2_1': '4', 'tier_2_2': '5', 'tier_2_3': '6', 'tier_3_1': '7', 'tier_3_2': '8', 'tier_4_1': '9', 
                                         'tier_1_1_score': '1 Score', 'tier_1_2_score': '2 Score', 'tier_1_3_score': '3 Score', 'tier_2_1_score': '4 Score', 'tier_2_2_score': '5 Score', 'tier_2_3_score': '6 Score', 'tier_3_1_score': '7 Score', 'tier_3_2_score': '8 Score', 'tier_4_1_score': '9 Score',
                                         'top_6_score': 'Score', 'top_7_score': 'Tiebreak'})
-for i in range(1, 10): 
-    merged_df[f'Pick: {i}'] = merged_df[str(i)] + ' (' + merged_df[f'{i} Score'].astype(str) + ')'
+tier_cols = ['tier_1_1', 'tier_1_2', 'tier_1_3', 'tier_2_1', 'tier_2_2', 'tier_2_3', 'tier_3_1', 'tier_3_2', 'tier_4_1']
+
+# Build pick display strings sorted by score (best first) for each row
+def _build_sorted_picks(row):
+    picks = []
+    for tcol in tier_cols:
+        name = row[tcol.replace('tier_', '').replace('_', '', 1)] if False else row.get(tcol, '')
+    # Gather name, score, thru for each pick
+    picks = []
+    for tcol in tier_cols:
+        col_num = tier_cols.index(tcol) + 1
+        name_col = str(col_num)
+        score_col = f'{col_num} Score'
+        thru_col = f'{tcol}_thru'
+        name = row.get(name_col, '')
+        score = row.get(score_col, 0)
+        try:
+            score_val = float(score) if not pd.isna(score) else 0
+        except (ValueError, TypeError):
+            score_val = 0
+        thru = str(row.get(thru_col, '') or '')
+        hole_indicator = f'⛳{thru} ' if thru else ''
+        display = f'{hole_indicator}{name} ({score})'
+        picks.append((score_val, display))
+    picks.sort(key=lambda x: x[0])
+    return picks
+
+for idx in merged_df.index:
+    sorted_picks = _build_sorted_picks(merged_df.loc[idx])
+    for i, (_, display) in enumerate(sorted_picks, 1):
+        merged_df.at[idx, f'Pick: {i}'] = display
 merged_df['Rank'] = merged_df['Score'].rank(method='min').astype(int)
 # Add blank col for spacing
 merged_df[''] = ''
@@ -204,11 +232,15 @@ score_columns = [col for col in filtered_df.columns if 'Score' in col]
 for col in score_columns:
     filtered_df[col] = filtered_df[col].astype(str)
 
+pick_rename = {f'Pick: {i}': f'Score {i}' for i in range(1, 10)}
+display_cols = ['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9']
+display_df = filtered_df.sort_values(by='Rank')[display_cols].rename(columns=pick_rename)
+
 # Now display the DataFrame
-st.dataframe(data=filtered_df.sort_values(by='Rank'), 
-            hide_index=True, 
-            column_order=['Rank', 'Name', 'Score', 'Tiebreak', '', 'Pick: 1', 'Pick: 2', 'Pick: 3', 'Pick: 4', 'Pick: 5', 'Pick: 6', 'Pick: 7', 'Pick: 8', 'Pick: 9'], 
-            width=2000)
+st.dataframe(data=display_df,
+            hide_index=True,
+            width=2000,
+            height=800)
 # def display_messages(messages):
 #     st.subheader("Chat Messages")
 #     for message in reversed(messages):  # Display newest messages at the top
