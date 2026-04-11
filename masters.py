@@ -69,7 +69,15 @@ def get_masters_scores(year=None):
         score = 0 if score_str == 'E' else int(score_str.replace('+', ''))
         linescores = player.get('linescores', [])
 
-        is_cut = current_round >= 3 and any(ls.get('displayValue') == '-' for ls in linescores)
+        def _is_cut_round(ls):
+            """A '-' linescore means cut only if there's no tee time scheduled."""
+            if ls.get('displayValue') != '-':
+                return False
+            stats = ls.get('statistics', {}).get('categories', [{}])[0].get('stats', [])
+            # Active players with a tee time have 7 stat entries; cut players have 6
+            return len(stats) < 7
+
+        is_cut = current_round >= 3 and any(_is_cut_round(ls) for ls in linescores if ls.get('period', 0) >= 3)
         player_data.append({'name': name, 'score': score, 'is_cut': is_cut, 'linescores': linescores})
 
         if not is_cut:
@@ -201,7 +209,12 @@ def _build_sorted_picks(row):
         except (ValueError, TypeError):
             score_val = 0
         thru = str(row.get(thru_col, '') or '')
-        hole_indicator = f'⛳{thru} ' if thru else ''
+        if thru == 'CUT':
+            hole_indicator = 'x '
+        elif thru:
+            hole_indicator = f'⛳{thru} '
+        else:
+            hole_indicator = ''
         display = f'{hole_indicator}{name} ({score})'
         picks.append((score_val, display))
     picks.sort(key=lambda x: x[0])
